@@ -1,89 +1,107 @@
-#include<iostream>
-#include<queue>
-#include<vector>
-#include<map>
+#include<bits/stdc++.h>
 using namespace std;
 
-struct Node{
+
+struct Node {
     char ch;
     int freq;
     Node *left, *right;
 
-    Node(char c, int f){
+    Node(char c, int f) {
         ch = c;
         freq = f;
         left = right = NULL;
     }
 };
 struct Compare {
-    bool operator()(Node* a, Node* b){
+    bool operator()(Node* a, Node* b) {
         return a->freq > b->freq;
     }
 };
+void generateCodes(Node* root, string code, map<char,string> &huffmanCode) {
+    if (!root) return;
 
-map<char, string> huffmanCode;
-
-void printCodes(Node* root, string code){
-    if(!root) return;
-
-    if(!root->left&&!root->right){
+    if (!root->left && !root->right) {
         huffmanCode[root->ch] = code;
-        cout << "'" << root->ch << "' : " << code << endl;
+        return;
     }
-    printCodes(root->left,  code + "0");
-    printCodes(root->right, code + "1");
+
+    generateCodes(root->left, code + "0", huffmanCode);
+    generateCodes(root->right, code + "1", huffmanCode);
 }
-int main(){
+
+int main() {
+
     string text;
-    cout<<"Enter text:";
-    getline(cin,text);
+    cout << "Enter text: ";
+    getline(cin, text);   
 
     if(text.empty()){
-        cout<<"Text is empty!"<< endl;
+        cout << "Text is empty!" << endl;
         return 0;
     }
-    map<char, int> freq;
-    for(char c:text) freq[c]++;
 
-    cout <<"\nFrequency Calculation:\n";
-    for(auto &p:freq){
-        if(p.first==' ')
-            cout<<"[space] : "<<p.second<<endl;
+    
+    map<char,int> freq;
+    for(char c : text)
+        freq[c]++;
+
+    cout << "\nFrequencies:\n";
+    for(auto it : freq) {
+        if(it.first == ' ')
+            cout << "[space] : " << it.second << endl;
         else
-            cout<<p.first<<" : "<< p.second<<endl;
+            cout << it.first << " : " << it.second << endl;
     }
+
 
     priority_queue<Node*, vector<Node*>, Compare> pq;
-    for(auto &p : freq){
-        pq.push(new Node(p.first, p.second));
-    }
+    for(auto it : freq)
+        pq.push(new Node(it.first, it.second));
 
-    while(pq.size() > 1){
+
+    while(pq.size() > 1) {
         Node* left = pq.top(); pq.pop();
         Node* right = pq.top(); pq.pop();
 
-        Node* newNode = new Node('$', left->freq + right->freq);
-        newNode->left = left;
-        newNode->right = right;
+        Node* merged = new Node('\0', left->freq + right->freq);
+        merged->left = left;
+        merged->right = right;
 
-        pq.push(newNode);
+        pq.push(merged);
     }
 
-    Node*root=pq.top();
+    Node* root = pq.top();
 
-    cout<<"\nHuffman Codes:\n";
-    printCodes(root,"");
+    
+    map<char,string> huffmanCode;
+    generateCodes(root, "", huffmanCode);
 
-    int originalSize = text.size()*8;
-    int compressedSize = 0;
-
-    for(auto &p : freq){
-        compressedSize += p.second * huffmanCode[p.first].size();
+    
+    cout << "\nHuffman Table:\n";
+    cout << "Character\tCode\n";
+    for(auto it : huffmanCode) {
+        if(it.first == ' ')
+            cout << "[space]\t\t" << it.second << endl;
+        else
+            cout << it.first << "\t\t" << it.second << endl;
     }
 
-    cout <<"\nOriginal size:"<<originalSize <<"bits"<<endl;
-    cout <<"Compressed size:"<<compressedSize <<"bits"<< endl;
-    cout <<"Compression ratio:"<<(double)compressedSize / originalSize << endl;
+    
+    int compressedLength = 0;
+    for(char c : text)
+        compressedLength += huffmanCode[c].size();
+
+    int originalLength = text.length() * 8;
+    int tableLength = 0;
+
+    for(auto it : huffmanCode)
+        tableLength += 8 + it.second.length();  
+
+    cout << "\nOriginal Length: " << originalLength << " bits" << endl;
+    cout << "Compressed Message Length: " << compressedLength << " bits" << endl;
+    cout << "Table Length: " << tableLength << " bits" << endl;
+    cout << "New Length: " << compressedLength + tableLength << " bits" << endl;
 
     return 0;
 }
